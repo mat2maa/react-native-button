@@ -23,7 +23,11 @@ const Button = React.createClass({
     {
       textStyle: Text.propTypes.style,
       disabledStyle: Text.propTypes.style,
-      children: PropTypes.string.isRequired,
+      children: React.PropTypes.oneOfType([
+        React.PropTypes.string,
+        React.PropTypes.node,
+        React.PropTypes.element
+      ]),
       activeOpacity: PropTypes.number,
       allowFontScaling: PropTypes.bool,
       isLoading: PropTypes.bool,
@@ -41,6 +45,32 @@ const Button = React.createClass({
     isAndroid: (Platform.OS === 'android'),
   },
 
+  _renderChildren: function(isIOS) {
+    var childElements = [];
+      React.Children.forEach(this.props.children, (item) => {
+        if (typeof item === 'string') {
+          var element;
+          if (isIOS) {
+            element = (
+              <Text key={item} style={[styles.textButton, this.props.textStyle]} allowFontScaling={this.props.allowFontScaling}>
+                {item}
+              </Text>
+            );
+          } else {
+            var element = (
+              <Text key={item} style={[styles.textButton, this.props.textStyle]}>
+                {item}
+              </Text>
+            );
+          }
+          childElements.push(element);
+        } else if (React.isValidElement(item)) {
+          childElements.push(item);
+        }
+      });
+    return (childElements);
+  },
+
   _renderInnerTextAndroid: function () {
     if (this.props.isLoading) {
       return (
@@ -53,11 +83,7 @@ const Button = React.createClass({
         />
       );
     }
-    return (
-      <Text style={[styles.textButton, this.props.textStyle]}>
-        {this.props.children}
-      </Text>
-    );
+    return this._renderChildren(false);
   },
 
   _renderInnerTextiOS: function () {
@@ -71,11 +97,7 @@ const Button = React.createClass({
         />
       );
     }
-    return (
-      <Text style={[styles.textButton, this.props.textStyle]} allowFontScaling={this.props.allowFontScaling}>
-        {this.props.children}
-      </Text>
-    );
+    return this._renderChildren(true);
   },
 
   shouldComponentUpdate: function (nextProps, nextState) {
